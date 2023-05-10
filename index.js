@@ -3,8 +3,7 @@
 
 // init project
 var express = require('express');
-const timeConverter = require('./timeFunctions/controller')
-const formattedDateTime = require('./timeFunctions/controller')
+
 var app = express();
 
 // enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
@@ -23,13 +22,21 @@ app.get("/", function (req, res) {
 
 // your first API endpoint... 
 app.get("/api/:date", function (req, res) {
-  let { date } = req.params;
+  let date  = new Date(req.params.date);
+  console.log(date)
+  let unixTimestamp;
+  
+  const isInvalidDate = (date) => date.toUTCString() === "Invalid Date"
   
   if(date){
-    let unixTimestamp = date.split('-').join('')
 
-    date = new Date(unixTimestamp * 1000)
-    if(!isNaN(date.getTime()) && date.getTime() >= 0){
+        if(isInvalidDate(date)){
+          date = new Date(+req.params.date)
+          unixTimestamp = date.getTime()
+        }else{
+          date = date
+          unixTimestamp = date.getTime();
+        }
       const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const weekday = weekdays[date.getUTCDay()];
@@ -39,22 +46,27 @@ app.get("/api/:date", function (req, res) {
       const hours = date.getUTCHours();
       const minutes = date.getUTCMinutes();
       const seconds = date.getUTCSeconds();
-      const formattedDateTime = `${weekday}, ${day.toString().padStart(2, '0')} ${month.toString().padStart(2, '0')} ${year} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} GMT`;
+  
+      const formattedDateTime = `${weekday}, ${day.toString().padStart(2, '0')} ${month} ${year} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} GMT`;
+      
+      if(!isNaN(date.getTime()) && date.getTime() >= 0){
+        res.json({"unix": unixTimestamp, "utc":formattedDateTime})
+      }else{
+        res.json({ error : "Invalid Date" })
+      }
+      
 
-    res.json({"unix": Number(unixTimestamp), "utc":formattedDateTime})
-    }else{
-      res.json({"error":"Invalid Date"});
-    }
   }else{
     res.redirect('/api')
   }
+
 });
 
 app.get('/api', (req, res, next) => {
 
       const date = new Date()
 
-      const unixTimestamp = Math.floor(date.getTime() / 1000);
+      const unixTimestamp = Math.floor(date.getTime());
 
   // Create an array of weekday names and month names
   
